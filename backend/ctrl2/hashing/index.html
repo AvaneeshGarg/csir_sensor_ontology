@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SensorSync File Integrity</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
+        h2 {
+            color: #222;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 5px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #1976d2;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #135ba1;
+        }
+
+        .loader {
+            display: inline-block;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .valid { color: green; font-weight: bold; }
+        .invalid { color: red; font-weight: bold; }
+
+        .section {
+            background: #fff;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+<center><h1>Check File Integrity: SensorSync Portal</h1></center>
+    <div class="section">
+        <h2>Available Files</h2>
+        <button onclick="loadFileList()">Load File List</button>
+        <span id="fileListLoader" style="display:none;" class="loader"></span>
+        <ul id="fileList"></ul>
+    </div>
+
+    <div class="section">
+        <h2>Verify Secure XLSX File</h2>
+        <form id="verifyForm">
+            XLSX File: <input type="file" id="file" name="file" accept=".xlsx" required><br><br>
+            <button type="submit">Verify File</button>
+            <span id="verifyLoader" style="display:none;" class="loader"></span>
+        </form>
+
+        <h3>Verification Result:</h3>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function loadFileList() {
+            document.getElementById('fileListLoader').style.display = 'inline-block';
+            fetch('/ctrl2/hashing/list_files.php')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('fileListLoader').style.display = 'none';
+                    const fileList = document.getElementById('fileList');
+                    fileList.innerHTML = '';
+
+                    data.files.forEach(file => {
+                        const li = document.createElement('li');
+                        li.textContent = file + ' ';
+                        const downloadLink = document.createElement('a');
+                        downloadLink.href = '#';
+                        downloadLink.textContent = 'Download Secure';
+                        downloadLink.onclick = function(e) {
+                            e.preventDefault();
+                            downloadSecure(file);
+                        };
+                        li.appendChild(downloadLink);
+                        fileList.appendChild(li);
+                    });
+                })
+                .catch(error => {
+                    document.getElementById('fileListLoader').style.display = 'none';
+                    console.error('Error loading file list:', error);
+                });
+        }
+
+        function downloadSecure(filename) {
+            // Show loader while generating download
+            const loader = document.createElement('span');
+            loader.className = 'loader';
+            const li = Array.from(document.querySelectorAll('#fileList li')).find(l => l.textContent.includes(filename));
+            li.appendChild(loader);
+
+            // Start download after slight delay so loader shows
+            setTimeout(() => {
+                window.location.href = '/ctrl2/hashing/generate_secure_download.php?filename=' + encodeURIComponent(filename);
+                li.removeChild(loader);
+            }, 800); // slight delay to show loader UX
+        }
+
+        document.getElementById('verifyForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            document.getElementById('verifyLoader').style.display = 'inline-block';
+
+            const formData = new FormData();
+            formData.append('file', document.getElementById('file').files[0]);
+
+            fetch('/ctrl2/hashing/verify_uploaded_file.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                document.getElementById('verifyLoader').style.display = 'none';
+
+                const resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = '';
+
+                if (result.error) {
+                    resultDiv.innerHTML = `<span class="invalid">Error: ${result.error}</span>`;
+                    return;
+                }
+
+                const finalValid = result.final_valid;
+                resultDiv.innerHTML = `
+                    <p>File ID: <b>${result.file_id_from_hidden_sheet}</b></p>
+                    <p>Computed Hash: <code>${result.computed_hash}</code></p>
+                    <p>Hidden Sheet Hash: <code>${result.hidden_sheet_hash}</code> → ${result.valid_hidden_sheet ? '<span class="valid">MATCH</span>' : '<span class="invalid">MISMATCH</span>'}</p>
+                    <p>Supabase Stored Hash: <code>${result.supabase_stored_hash}</code> → ${result.valid_supabase ? '<span class="valid">MATCH</span>' : '<span class="invalid">MISMATCH</span>'}</p>
+                    <h3>Overall: ${finalValid ? '<span class="valid">✅ File is valid</span>' : '<span class="invalid">❌ File is tampered</span>'}</h3>
+                `;
+            })
+            .catch(error => {
+                document.getElementById('verifyLoader').style.display = 'none';
+                document.getElementById('result').innerHTML = '<span class="invalid">Error: ' + error + '</span>';
+            });
+        });
+    </script>
+
+</body>
+</html>

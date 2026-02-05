@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reset Password | SensorSync Portal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    *, *::before, *::after {
+        box-sizing: border-box;
+        }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(120deg, #f97316 0%, #fb923c 50%, #1e3a8a 100%);
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .reset-container {
+      background: rgba(255, 255, 255, 0.19);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border-radius: 18px;
+      box-shadow: 0 8px 32px 0 rgba(30, 58, 138, 0.12), 0 1.5px 7px 0 rgba(251,146,60,0.13);
+      padding: 36px 28px 28px 28px;
+      max-width: 370px;
+      width: 97vw;
+      border: 1.5px solid rgba(255, 255, 255, 0.3);
+    }
+    h2 {
+      color: #1e3a8a;
+      font-size: 22px;
+      margin-bottom: 20px;
+      text-align: center;
+      letter-spacing: 1.3px;
+    }
+    label {
+      font-weight: 500;
+      margin-bottom: 7px;
+      display: block;
+      color: #273254;
+      letter-spacing: 0.5px;
+    }
+    .input-wrap {
+      position: relative;
+      margin-bottom: 20px;
+    }
+    input[type="password"] {
+      width: 100%;
+      padding: 10px 12px 10px 36px;
+      border: 1.2px solid #d4d4d8;
+      border-radius: 6px;
+      font-size: 16px;
+      color: #1e293b;
+      background: rgba(255,255,255,0.87);
+      outline: none;
+      transition: border .18s;
+      box-shadow: 0 1.5px 7px 0 rgba(30,58,138,0.07);
+    }
+    input[type="password"]:focus {
+      border: 1.5px solid #2563eb;
+      background: #fff;
+    }
+    .icon-lock {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #a3a3a3;
+      font-size: 18px;
+      pointer-events: none;
+    }
+    .submit-btn {
+      width: 100%;
+      background: linear-gradient(90deg,#2563eb 40%,#1e40af 100%);
+      color: #fff;
+      border: none;
+      padding: 13px 0 12px 0;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 17px;
+      cursor: pointer;
+      margin-top: 7px;
+      box-shadow: 0 1.5px 7px 0 rgba(30,58,138,0.13);
+      transition: background .2s, box-shadow .2s, transform .08s;
+      letter-spacing: 0.5px;
+    }
+    .submit-btn:hover, .submit-btn:focus {
+      background: linear-gradient(90deg,#1e40af 0%, #2563eb 100%);
+      box-shadow: 0 2.5px 11px 0 rgba(30,58,138,0.21);
+      transform: translateY(-1px) scale(1.025);
+    }
+    .message {
+      text-align: center;
+      margin-top: 17px;
+      font-size: 15px;
+      line-height: 1.4;
+      padding: 0 3px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 28px;
+    }
+    .error {
+      color: #dc2626;
+      background: #fee2e2;
+      border-radius: 5px;
+      padding: 7px 11px;
+      border: 1px solid #fca5a5;
+    }
+    .success {
+      color: #059669;
+      background: #d1fae5;
+      border-radius: 5px;
+      padding: 7px 11px;
+      border: 1px solid #6ee7b7;
+    }
+    .msg-icon {
+      font-size: 18px;
+      margin-right: 8px;
+      margin-bottom: -2px;
+    }
+    @media (max-width: 540px) {
+      .reset-container { padding: 20px 7vw; max-width: 99vw; }
+      h2 { font-size: 19px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="reset-container">
+    <h2>🔒 Dear User Please Reset Your Password</h2>
+    <form id="resetForm" autocomplete="off">
+      <label for="newPassword">New Password</label>
+      <div class="input-wrap">
+        <span class="icon-lock">🔑</span>
+        <input type="password" id="newPassword" name="newPassword" minlength="6" required autocomplete="new-password" />
+      </div>
+      <label for="confirmPassword">Confirm Password</label>
+      <div class="input-wrap">
+        <span class="icon-lock">🔑</span>
+        <input type="password" id="confirmPassword" name="confirmPassword" minlength="6" required autocomplete="new-password" />
+      </div>
+      <button class="submit-btn" type="submit">Reset Password</button>
+    </form>
+    <div id="message" class="message"></div>
+  </div>
+  <script>
+    function getToken() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('token') || '';
+    }
+
+    document.getElementById('resetForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const msg = document.getElementById('message');
+      msg.textContent = '';
+      msg.className = 'message';
+
+      const token = getToken();
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      if (!token) {
+        msg.innerHTML = `<span class="msg-icon">❗</span>Invalid or missing reset token!`;
+        msg.classList.add('error');
+        return;
+      }
+      if (!newPassword || !confirmPassword) {
+        msg.innerHTML = `<span class="msg-icon">❗</span>Please fill all fields.`;
+        msg.classList.add('error');
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        msg.innerHTML = `<span class="msg-icon">❗</span>Passwords do not match.`;
+        msg.classList.add('error');
+        return;
+      }
+
+      const formData = new URLSearchParams();
+      formData.append('action', 'reset');
+      formData.append('token', token);
+      formData.append('newPassword', newPassword);
+
+      try {
+        const res = await fetch('https://lostdevs.io/ctrl2/ldauth.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: formData.toString()
+        });
+        const data = await res.json();
+        if (data.success) {
+          msg.innerHTML = `<span class="msg-icon">✅</span>${data.message || 'Password reset successful. You can now log in.'}`;
+          msg.classList.add('success');
+          document.getElementById('resetForm').reset();
+        } else {
+          msg.innerHTML = `<span class="msg-icon">❗</span>${data.error || 'Failed to reset password.'}`;
+          msg.classList.add('error');
+        }
+      } catch (err) {
+        msg.innerHTML = `<span class="msg-icon">❗</span>Network error. Please try again later.`;
+        msg.classList.add('error');
+      }
+    });
+  </script>
+</body>
+</html>

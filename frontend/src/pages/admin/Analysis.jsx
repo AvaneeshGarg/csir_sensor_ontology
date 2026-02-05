@@ -1,0 +1,402 @@
+import React, { useState, useEffect } from 'react';
+import API_BASE_URL from '../../config';
+
+const Analysis = () => {
+  const [sensors, setSensors] = useState([]);
+  const [activeSensor, setActiveSensor] = useState('');
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [analysisData, setAnalysisData] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/beans/getSensors.php`)
+      .then(res => res.json())
+      .then(data => {
+        setSensors(data);
+        if (data.length > 0) setActiveSensor(data[0].id);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (!activeSensor) return;
+    setLoading(true);
+    const dateString = selectedDate.toLocaleDateString('en-CA');
+    fetch(`${API_BASE_URL}/beans/getSensorAnalysis.php?sensor_id=${activeSensor}&date=${dateString}`)
+      .then(res => res.json())
+      .then(data => {
+        setAnalysisData(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [activeSensor, selectedDate]);
+
+  const generateCalendarData = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - (firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1));
+    const calendarDays = [];
+    const today = new Date();
+
+    for (let week = 0; week < 6; week++) {
+      const weekDays = [];
+      for (let day = 0; day < 7; day++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + (week * 7) + day);
+        weekDays.push({
+          date: date,
+          day: date.getDate(),
+          isCurrentMonth: date.getMonth() === month,
+          isToday: date.toDateString() === today.toDateString(),
+          isSelected: date.toDateString() === selectedDate.toDateString()
+        });
+      }
+      calendarDays.push(weekDays);
+    }
+    return calendarDays;
+  };
+
+  const calendarData = generateCalendarData();
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  const navigateMonth = (direction) => {
+    const newDate = new Date(currentDate);
+    newDate.setMonth(currentDate.getMonth() + direction);
+    setCurrentDate(newDate);
+  };
+
+  const handleDateSelect = (date) => {
+    setSelectedDate(date);
+  };
+
+  return (
+    <div style={styles.container}>
+      <div style={styles.header}>
+        <h1 style={styles.headerTitle}>Analysis</h1>
+      </div>
+
+      <div style={styles.sensorNavigation}>
+        <label htmlFor="sensor-select" style={styles.sensorLabel}>Select Sensor:</label>
+        <select
+          id="sensor-select"
+          value={activeSensor}
+          onChange={e => setActiveSensor(Number(e.target.value))}
+          style={styles.sensorDropdown}
+        >
+          {sensors.map(sensor => (
+            <option key={sensor.id} value={sensor.id}>
+              {sensor.name || sensor.location || `Sensor ${sensor.id}`}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div style={styles.mainContent}>
+        <div style={styles.leftColumn}>
+          <div style={styles.calendarContainer}>
+            <div style={styles.calendarNavigation}>
+              <button style={styles.navButton} onClick={() => navigateMonth(-1)}>&#8249;</button>
+              <div style={styles.monthYear}>{monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}</div>
+              <button style={styles.navButton} onClick={() => navigateMonth(1)}>&#8250;</button>
+            </div>
+            <div style={styles.calendarHeader}>
+              {weekDays.map(day => (
+                <div key={day} style={styles.calendarWeekDay}>{day}</div>
+              ))}
+            </div>
+            <div style={styles.calendarGrid}>
+              {calendarData.map((week, weekIndex) =>
+                week.map((day, dayIndex) => (
+                  <div
+                    key={`${weekIndex}-${dayIndex}`}
+                    style={{
+                      ...styles.calendarDay,
+                      ...(day.isCurrentMonth ? styles.calendarDayActive : styles.calendarDayInactive),
+                      ...(day.isToday ? styles.calendarDayToday : {}),
+                      ...(day.isSelected ? styles.calendarDaySelected : {})
+                    }}
+                    onClick={() => day.isCurrentMonth && handleDateSelect(day.date)}
+                  >
+                    {day.day}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div style={styles.rightColumn}>
+          {loading || !analysisData ? (
+            <div style={{ textAlign: 'center', fontSize: '18px', color: '#1e40af' }}>Loading...</div>
+          ) : (
+            <>
+              <div style={styles.cardRow}>
+                <div style={styles.analysisCard}>
+                  <div style={styles.cardContent}>
+                    <div style={styles.cardTitle}>Min temperature </div>
+                    <div style={styles.cardValue}>{analysisData.minTemp ?? '--'}°C</div>
+                  </div>
+                </div>
+                <div style={styles.analysisCard}>
+                  <div style={styles.cardContent}>
+                    <div style={styles.cardTitle}>Max temperature </div>
+                    <div style={styles.cardValue}>{analysisData.maxTemp ?? '--'}°C</div>
+                  </div>
+                </div>
+                <div style={styles.analysisCard}>
+                  <div style={styles.cardContent}>
+                    <div style={styles.cardTitle}>Avg temperature</div>
+                    <div style={styles.cardValue}>{analysisData.avgTemp ?? '--'}°C</div>
+                  </div>
+                </div>
+              </div>
+              <div style={styles.cardRow}>
+                <div style={styles.analysisCard}>
+                  <div style={styles.cardContent}>
+                    <div style={styles.cardTitle}>Min humidity </div>
+                    <div style={styles.cardValue}>{analysisData.minHumidity ?? '--'}%</div>
+                  </div>
+                </div>
+                <div style={styles.analysisCard}>
+                  <div style={styles.cardContent}>
+                    <div style={styles.cardTitle}>Max humidity </div>
+                    <div style={styles.cardValue}>{analysisData.maxHumidity ?? '--'}%</div>
+                  </div>
+                </div>
+                <div style={styles.analysisCard}>
+                  <div style={styles.cardContent}>
+                    <div style={styles.cardTitle}>Avg humidity </div>
+                    <div style={styles.cardValue}>{analysisData.avgHumidity ?? '--'}%</div>
+                  </div>
+                </div>
+              </div>
+              <div style={styles.bottomCardsContainer}>
+                <div style={styles.bottomCardRow}>
+                  <div style={styles.largeCard}>
+                    <div style={styles.cardContent}>
+                      <div style={styles.cardTitle}>Rate of Change Temp</div>
+                      <div style={styles.cardValue}>{analysisData.rateOfChangeTemp ?? '--'}°C/hr</div>
+                    </div>
+                  </div>
+                  <div style={styles.largeCard}>
+                    <div style={styles.cardContent}>
+                      <div style={styles.cardTitle}>Variance temp</div>
+                      <div style={styles.cardValue}>{analysisData.varianceTemp ?? '--'}°C²</div>
+                    </div>
+                  </div>
+                </div>
+                <div style={styles.bottomCardRow}>
+                  <div style={styles.largeCard}>
+                    <div style={styles.cardContent}>
+                      <div style={styles.cardTitle}>Rate of Change Humidity</div>
+                      <div style={styles.cardValue}>{analysisData.rateOfChangeHumidity ?? '--'}%/hr</div>
+                    </div>
+                  </div>
+                  <div style={styles.largeCard}>
+                    <div style={styles.cardContent}>
+                      <div style={styles.cardTitle}>Variance Humidity</div>
+                      <div style={styles.cardValue}>{analysisData.varianceHumidity ?? '--'}%²</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const styles = {
+  container: {
+    width: '100%',
+    maxWidth: '1200px',
+    margin: '0 auto',
+    fontFamily: 'Arial, sans-serif',
+    backgroundColor: '#dae2f7',
+    minHeight: '100vh'
+  },
+  header: {
+    backgroundColor: '#1e3a8a',
+    padding: '20px',
+    textAlign: 'center'
+  },
+  headerTitle: {
+    color: 'white',
+    margin: '0',
+    fontSize: '24px',
+    fontWeight: 'bold'
+  },
+  sensorNavigation: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: '10px',
+    margin: '20px'
+  },
+  sensorLabel: {
+    fontWeight: 'normal',
+    fontSize: '14px',
+    color: '#374151',
+    marginRight: '4px',
+    whiteSpace: 'nowrap'
+  },
+  sensorDropdown: {
+    width: '250px',
+    padding: '10px',
+    fontSize: '14px',
+    borderRadius: '6px',
+    border: '1px solid #ccc',
+    backgroundColor: '#fff',
+    color: '#1f2937'
+  },
+  mainContent: {
+    display: 'flex',
+    gap: '20px',
+    margin: '20px',
+    alignItems: 'flex-start'
+  },
+  leftColumn: {
+    flex: '0 0 300px'
+  },
+  rightColumn: {
+    flex: '1',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '15px'
+  },
+  calendarContainer: {
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    padding: '20px',
+    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+  },
+  calendarNavigation: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '20px'
+  },
+  navButton: {
+    backgroundColor: 'transparent',
+    border: 'none',
+    fontSize: '20px',
+    fontWeight: 'bold',
+    color: '#374151',
+    cursor: 'pointer',
+    padding: '5px 10px',
+    borderRadius: '4px',
+    transition: 'background-color 0.2s ease'
+  },
+  monthYear: {
+    fontSize: '16px',
+    fontWeight: 'bold',
+    color: '#1f2937'
+  },
+  calendarHeader: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(7, 1fr)',
+    gap: '2px',
+    marginBottom: '10px'
+  },
+  calendarWeekDay: {
+    textAlign: 'center',
+    fontSize: '12px',
+    fontWeight: 'bold',
+    color: '#374151',
+    padding: '8px 4px'
+  },
+  calendarGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(7, 1fr)',
+    gap: '2px'
+  },
+  calendarDay: {
+    textAlign: 'center',
+    padding: '10px 4px',
+    fontSize: '14px',
+    cursor: 'pointer',
+    borderRadius: '4px',
+    transition: 'all 0.2s ease',
+    minHeight: '30px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  calendarDayActive: {
+    color: '#374151',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)'
+  },
+  calendarDayInactive: {
+    color: '#9ca3af',
+    cursor: 'default'
+  },
+  calendarDayToday: {
+    backgroundColor: 'rgba(59, 130, 246, 0.3)',
+    color: '#1e40af',
+    fontWeight: 'bold',
+    border: '2px solid #3b82f6'
+  },
+  calendarDaySelected: {
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    fontWeight: 'bold'
+  },
+  cardRow: {
+    display: 'flex',
+    gap: '15px'
+  },
+  analysisCard: {
+    flex: '1',
+    backgroundColor: '#ffffff',
+    borderRadius: '10px',
+    minHeight: '80px',
+    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+  },
+  largeCard: {
+    flex: '1',
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    minHeight: '120px',
+    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+  },
+  bottomCardsContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '15px'
+  },
+  bottomCardRow: {
+    display: 'flex',
+    gap: '15px'
+  },
+  cardContent: {
+    padding: '10px',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '80%',
+    textAlign: 'center'
+  },
+  cardTitle: {
+    fontSize: '12px',
+    color: '#374151',
+    marginBottom: '8px',
+    fontWeight: '500',
+    lineHeight: '1.3'
+  },
+  cardValue: {
+    fontSize: '18px',
+    fontWeight: 'bold',
+    color: '#1f2937'
+  }
+};
+
+export default Analysis;

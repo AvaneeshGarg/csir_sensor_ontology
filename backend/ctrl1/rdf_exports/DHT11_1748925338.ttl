@@ -1,0 +1,68 @@
+@prefix ssn: <http://www.w3.org/ns/ssn/> .
+@prefix dc: <http://purl.org/dc/terms/> .
+@prefix sidf: <http://example.org/ns/sidf#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix iot: <http://example.org/ns/iot#> .
+@prefix sosa: <http://www.w3.org/ns/sosa/> .
+@prefix geo: <http://www.w3.org/2003/01/geo/wgs84_pos#> .
+@prefix qudt: <http://qudt.org/schema/qudt/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+
+<urn:iot:sensor:DHT11>
+  a ssn:Sensor ;
+  dc:manufacturer "Aosong" ;
+  ssn:hasOperatingProperty "Factory Calibrated" ;
+  sidf:interfaceType "Digital" ;
+  sidf:samplingRate "1Hz" ;
+  ssn:hasDeployment <urn:iot:deployment:DHT11> ;
+  rdfs:label "TemperatureHumiditySensor" ;
+  ssn:hasMeasurementRange [
+    iot:minTemperature "0" ;
+    iot:maxTemperature "50"
+  ], [
+    iot:minHumidity "20" ;
+    iot:maxHumidity "90"
+  ] .
+
+<urn:iot:deployment:DHT11>
+  a ssn:Deployment ;
+  rdfs:label "Indoor" ;
+  ssn:onPlatform "ESP32" .
+
+<urn:iot:location:DHT11>
+  a sosa:FeatureOfInterest ;
+  geo:lat "28.637270" ;
+  geo:long "77.170280" .
+
+<urn:iot:obs:DHT11-temp-1748925338>
+  a sosa:Observation ;
+  sosa:madeBySensor <urn:iot:sensor:DHT11> ;
+  sosa:observedProperty iot:Temperature ;
+  sosa:hasFeatureOfInterest <urn:iot:location:DHT11> ;
+  sosa:resultTime "2025-06-03T10:05:36Z" ;
+  sosa:hasResult <urn:iot:obs:DHT11-temp-1748925338:result> ;
+  ssn:hasAccuracy "±2°C" ;
+  ssn:hasResolution "1" .
+
+<urn:iot:obs:DHT11-temp-1748925338:result>
+  a qudt:QuantityValue ;
+  qudt:numericValue "300.75" ;
+  qudt:unit unit:Kelvin ;
+  qudt:quantityKind qudt:ThermodynamicTemperature .
+
+<urn:iot:obs:DHT11-humid-1748925338>
+  a sosa:Observation ;
+  sosa:madeBySensor <urn:iot:sensor:DHT11> ;
+  sosa:observedProperty iot:Humidity ;
+  sosa:hasFeatureOfInterest <urn:iot:location:DHT11> ;
+  sosa:resultTime "2025-06-03T10:05:36Z" ;
+  sosa:hasResult <urn:iot:obs:DHT11-humid-1748925338:result> ;
+  ssn:hasAccuracy "±5% RH" ;
+  ssn:hasResolution "1" .
+
+<urn:iot:obs:DHT11-humid-1748925338:result>
+  a qudt:QuantityValue ;
+  qudt:numericValue "38" ;
+  qudt:unit unit:Percent ;
+  qudt:quantityKind qudt:RelativeHumidity .
+
