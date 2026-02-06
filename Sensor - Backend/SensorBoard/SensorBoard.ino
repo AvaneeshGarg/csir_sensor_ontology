@@ -152,19 +152,35 @@ void setup() {
 }
 
 void loop() {
+  // Static variable to count loops (keeps value between loops)
+  static int loopCount = 1; 
   static unsigned long lastPrint = 0;
-  if (millis() - lastPrint > 5000) { // Print every 5 seconds
+
+  // --- Debug Prints ---
+  Serial.print("1. milliseconds in loop function=");
+  Serial.println(millis());
+
+  if (millis() - lastPrint > 5000) { 
     Serial.print("Free Heap: ");
     Serial.println(ESP.getFreeHeap());
     lastPrint = millis();
+    Serial.print("2. lastPrint value in loop function=");
+    Serial.println(lastPrint);
   }
+
   Serial.println("Starting loop...");
   timeClient.update();
+  
   unsigned long currentMillis = millis();
+  Serial.print("3. current milliseconds in loop function=");
+  Serial.println(currentMillis);
+
+  // --- Sensor Reading Logic ---
   if (currentMillis - lastSensorReading >= sensorReadInterval) {
     Serial.println("Reading sensor...");
     float t = dht.readTemperature();
     float h = dht.readHumidity();
+    
     if (!isnan(t) && !isnan(h)) {
       SensorReading reading;
       reading.temperature = t;
@@ -178,9 +194,12 @@ void loop() {
     }
     lastSensorReading = currentMillis;
   }
+  
+  // --- Transmission Logic ---
   if (currentMillis - lastDataTransmission >= transmissionInterval) {
     Serial.println("Transmitting data...");
     SensorReading dataToSend = bufferLogic.getDataForTransmission();
+    
     if (dataToSend.isValid) {
       String payload = "";
       payload += "secret=" + String(secretKey);
@@ -193,30 +212,39 @@ void loop() {
       payload += "&rdf_metadata=sensor_type:DHT11,location:indoor,purpose:environmental_monitoring,transmission_mode:buffered";
       payload += "&download_metadata=chip_id:" + String(ESP.getChipId(), HEX);
 
-      //secureClient.setInsecure();
-      //http.begin(secureClient, serverURL);
+      // *** PRINT PAYLOAD HERE ***
+      Serial.println("\n--- PAYLOAD START ---");
+      Serial.println(payload);
+      Serial.println("--- PAYLOAD END ---\n");
+
       WiFiClient client;
       http.begin(client, serverURL);
       http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+      
       int httpResponseCode = http.POST(payload);
-    
       Serial.printf("HTTP POST code: %d\n", httpResponseCode);
 
-      // Add this to see what the server actually returns:
       if (httpResponseCode > 0) {
         String response = http.getString();
         Serial.println("Server response: " + response);
       }
-      
+
       http.end();
     } else {
       Serial.println("No valid data to transmit.");
     }
     lastDataTransmission = currentMillis;
   }
+  
   time_t now = time(nullptr);
-  Serial.print("Current timestamp: ");
+  Serial.print("4. Current timestamp: ");
   Serial.println(now);
-  Serial.println("End of loop.");
+
+    Serial.print("Loop ");
+  Serial.print(loopCount);
+  Serial.println(" ended");
+  Serial.println("--------------------------------------------------");
+  
+  loopCount++; // Increase counter
   delay(1000);
 }
