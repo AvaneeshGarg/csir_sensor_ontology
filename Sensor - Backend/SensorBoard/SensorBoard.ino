@@ -2,31 +2,42 @@
 // SensorBoard.ino - Main Arduino Sketch (No Crypto, With Buffer, 30s Interval)
 // =============================================================================
 
+
+// This is within the "Avaneesh" version of the project 
+
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <WiFiClientSecure.h>
 #include <DHT.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
-#include "./include/BufferLogic.h"
 #include <time.h>
 #include <WiFiClient.h>
 #include <ArduinoJson.h>
+#include "./include/BufferLogic.h"
 #include "./include/ConfigManager.h"
 #include "./include/SensorModel.h"
 #include "./include/TransmitHandler.h"
 #include "./include/JSONView.h"
 
 // WiFi credentials
-const char* ssid = "SidOmi";
-const char* password = "28102003Omi";
+//const char* ssid = "SidOmi";
+// const char* ssid = "KRC-IT";
+const char* ssid = "OnePlus 12R";
+//const char* password = "28102003Omi";
+// const char* password = "ticrk@950";
+const char* password = "oneplus##";
 
 // Server configuration
-const char* serverURL = "https://lostdevs.io/ctrl1/master.php";
-const char* secretKey = "lostdev-sensor1-1008200303082003";
+//const char* serverURL = "https://lostdevs.io/ctrl1/master.php";
+// const char* serverURL = "http://10.59.243.91/backend/ctrl1/debug_trace.php";
+const char* serverURL = "http://10.59.243.91/backend/ctrl1/master.php";
+// const char* secretKey = "lostdev-sensor1-1008200303082003";
+const char* secretKey = "sb_secret_CQrgzzNmsh8hfZGYDpOAzQ_MCj0SvF-";
 
 // DHT sensor configuration
-#define DHT_PIN 2
+// #define DHT_PIN 2
+#define DHT_PIN 4
 #define DHT_TYPE DHT11
 DHT dht(DHT_PIN, DHT_TYPE);
 
@@ -182,11 +193,21 @@ void loop() {
       payload += "&rdf_metadata=sensor_type:DHT11,location:indoor,purpose:environmental_monitoring,transmission_mode:buffered";
       payload += "&download_metadata=chip_id:" + String(ESP.getChipId(), HEX);
 
-      secureClient.setInsecure();
-      http.begin(secureClient, serverURL);
+      //secureClient.setInsecure();
+      //http.begin(secureClient, serverURL);
+      WiFiClient client;
+      http.begin(client, serverURL);
       http.addHeader("Content-Type", "application/x-www-form-urlencoded");
       int httpResponseCode = http.POST(payload);
+    
       Serial.printf("HTTP POST code: %d\n", httpResponseCode);
+
+      // Add this to see what the server actually returns:
+      if (httpResponseCode > 0) {
+        String response = http.getString();
+        Serial.println("Server response: " + response);
+      }
+      
       http.end();
     } else {
       Serial.println("No valid data to transmit.");
@@ -197,4 +218,5 @@ void loop() {
   Serial.print("Current timestamp: ");
   Serial.println(now);
   Serial.println("End of loop.");
-} 
+  delay(1000);
+}

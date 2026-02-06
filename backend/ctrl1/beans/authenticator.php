@@ -1,10 +1,11 @@
 <?php
 class Authenticator {
     public static function enforceHTTPS() {
-        if (empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] !== 'on') {
-            ErrorHandler::handle("LDNPL105", "Data sent over HTTP instead of HTTPS", $GLOBALS['supabase_audit_url'], $GLOBALS['supabase_api_key'], "Data_Main", "", ["description" => "Attempted HTTP"]);
-            self::send_response(403, ["error_code" => "LDNPL105", "message" => "HTTPS Required"]);
-        }
+        // Disabled for Local Testing:
+        // if (empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] !== 'on') {
+        //     ErrorHandler::handle("LDNPL105", "Data sent over HTTP instead of HTTPS", $GLOBALS['supabase_audit_url'], $GLOBALS['supabase_api_key'], "Data_Main", "", ["description" => "Attempted HTTP"]);
+        //     self::send_response(403, ["error_code" => "LDNPL105", "message" => "HTTPS Required"]);
+        // }
     }
     public static function checkSecret($secret) {
         global $valid_secret;

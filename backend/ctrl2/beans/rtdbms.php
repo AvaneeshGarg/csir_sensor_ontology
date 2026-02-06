@@ -10,7 +10,7 @@ if (!isset($_GET['type'])) {
 
 $sensor_type = preg_replace('/[^\w\-]/', '', $_GET['type']); 
 
-$base_url = 'https://csir-datacollection-default-rtdb.asia-southeast1.firebasedatabase.app/';
+$base_url = 'https://sensor-realtime-data-default-rtdb.asia-southeast1.firebasedatabase.app/';
 $path = "sensor/" . rawurlencode($sensor_type) . "/latest.json";
 $firebase_url = $base_url . $path;
 

@@ -769,6 +769,21 @@ class Resource implements \ArrayAccess
      *
      * @return boolean true on success or false on failure.
      */
+    /**
+     * Whether a offset exists
+     *
+     * The return value will be casted to boolean if non-boolean was returned.
+     *
+     * Example:
+     *   if(isset($resource['rdfs:label'])) { }
+     *
+     * @link http://php.net/manual/en/arrayaccess.offsetexists.php
+     *
+     * @param mixed $offset An offset to check for.
+     *
+     * @return boolean true on success or false on failure.
+     */
+    #[\ReturnTypeWillChange]
     public function offsetExists($offset)
     {
         return $this->__isset($offset);
@@ -786,6 +801,19 @@ class Resource implements \ArrayAccess
      *
      * @return mixed Can return all value types.
      */
+    /**
+     * Offset to retrieve
+     *
+     * Example:
+     *   $label = $resource['rdfs:label'];
+     *
+     * @link http://php.net/manual/en/arrayaccess.offsetget.php
+     *
+     * @param mixed $offset The offset to retrieve.
+     *
+     * @return mixed Can return all value types.
+     */
+    #[\ReturnTypeWillChange]
     public function offsetGet($offset)
     {
         return $this->__get($offset);
@@ -804,6 +832,20 @@ class Resource implements \ArrayAccess
      *
      * @return void
      */
+    /**
+     * Offset to set
+     *
+     * Example:
+     *   $resource['rdfs:label'] = 'label';
+     *
+     * @link http://php.net/manual/en/arrayaccess.offsetset.php
+     *
+     * @param mixed $offset The offset to assign the value to.
+     * @param mixed $value The value to set.
+     *
+     * @return void
+     */
+    #[\ReturnTypeWillChange]
     public function offsetSet($offset, $value)
     {
         $this->__set($offset, $value);
@@ -821,6 +863,19 @@ class Resource implements \ArrayAccess
      *
      * @return void
      */
+    /**
+     * Offset to unset
+     *
+     * Example:
+     *   unset($resource['rdfs:label']);
+     *
+     * @link http://php.net/manual/en/arrayaccess.offsetunset.php
+     *
+     * @param mixed $offset The offset to unset.
+     *
+     * @return void
+     */
+    #[\ReturnTypeWillChange]
     public function offsetUnset($offset)
     {
         $this->__unset($offset);
